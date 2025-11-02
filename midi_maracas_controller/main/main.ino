@@ -68,11 +68,24 @@ void setup() {
   MIDI.begin();
 }
 
+/*
+TODO:
+
+- LED control:
+
+  - show Battery percentage
+
+- Movement Control
+
+  - 
+
+*/
+
 void loop() {
   if (myCodeCell.Run(10)) {
     myCodeCell.PrintSensors();  // Print all enabled sensor values
     if (isConnected) {
-      if (myCodeCell.Motion_TapRead()) {
+      if (myCodeCell.Motion_TapDetectorRead()) {
         Serial.println(">> Tap Detected!");
         MIDI.sendNoteOn(60, 127, 1);
       }
