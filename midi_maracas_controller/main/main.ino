@@ -5,7 +5,7 @@
 /*
 some methods from CodeCell
 
-Motion_AccelerometerRead(float &x, float &y, float &z) // Accelerometer (m/s²)
+Motion_AccelerometerRead(float &x, float &y, float &z) // Accelerometer (m/s²) with respect to gravity
 Motion_GyroRead(float &x, float &y, float &z) // Gyroscope (°/s)
 Motion_MagnetometerRead(float &x, float &y, float &z) // Magnetometer (µT)
 Motion_GravityRead(float &x, float &y, float &z) // Gravity vector
@@ -13,6 +13,18 @@ Motion_LinearAccRead(float &x, float &y, float &z) // Linear acceleration
 Motion_RotationRead(float &roll, float &pitch, float &yaw) // Rotation (degrees)
 Motion_RotationNoMagRead(float &roll, float &pitch, float &yaw) // Rotation w/o mag
 Motion_RotationVectorRead(float &vec_r, float &vec_i, float &vec_j, float &vec_k) // Quaternion
+
+MOTION_ACCELEROMETER // 3-axis acceleration
+MOTION_GYRO // 3-axis angular velocity
+MOTION_MAGNETOMETER // 3-axis magnetic field
+MOTION_LINEAR_ACC // Linear acceleration
+MOTION_GRAVITY // Gravity vector
+MOTION_ROTATION // Roll, pitch, yaw (with mag)
+MOTION_ROTATION_NO_MAG // Roll, pitch, yaw (no mag)
+MOTION_STEP_COUNTER // Step count
+MOTION_STATE // On table / Stationary / Stable / In motion
+MOTION_TAP_DETECTOR // Tap detection
+MOTION_ACTIVITY // Activity classification
 
  For CodeCell C3 (ESP32-C3):
   - Board: ESP32C3 Dev Module
@@ -53,7 +65,7 @@ void setup() {
 
   Serial.begin(115200);
 
-  myCodeCell.Init(MOTION_TAP_DETECTOR);
+  myCodeCell.Init(MOTION_ACCELEROMETER);
 
   BLEMIDI.setHandleConnected([]() {
     isConnected = true;
@@ -84,11 +96,12 @@ TODO:
 void loop() {
   if (myCodeCell.Run(10)) {
     myCodeCell.PrintSensors();  // Print all enabled sensor values
-    if (isConnected) {
-      if (myCodeCell.Motion_TapDetectorRead()) {
-        Serial.println(">> Tap Detected!");
-        MIDI.sendNoteOn(60, 127, 1);
-      }
-    }
+
+    // if (isConnected) {
+    //   if (myCodeCell.Motion_TapDetectorRead()) {
+    //     Serial.println(">> Tap Detected!");
+    //     MIDI.sendNoteOn(60, 127, 1);
+    //   }
+    // }
   }
 }
