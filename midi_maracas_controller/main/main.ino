@@ -27,6 +27,7 @@ myCodeCell.PrintSensors(); //to print all enabled sensors to serial monitor
 */
 
 //There's somthing wrong with the esp32 library that I can't remember... if things don't work go back to version 2.0.17
+// Sometimes the native Arduino BLE-MIDI library won't work. In this case, just use the one I have forked in my repository.
 
 
 /*
@@ -45,15 +46,22 @@ Magnetometer : strength of magnetic field on 3 axis
 #include <hardware/BLEMIDI_ESP32.h>
 
 CodeCell myCodeCell;
-
 BLEMIDI_CREATE_INSTANCE("CODECELL_MIDI", MIDI)
+
+
 bool isConnected = false;
+float x = 0.0;
+float y = 0.0;
+float z1 = 0.0;
+float z2 = 0.0;
+float threshold_movement = 20.0;
+float threshold_stationary = 10.0;
 
 void setup() {
 
   Serial.begin(115200);
 
-  myCodeCell.Init(MOTION_TAP_DETECTOR);
+  myCodeCell.Init(MOTION_LINEAR_ACC);
 
   BLEMIDI.setHandleConnected([]() {
     isConnected = true;
@@ -82,13 +90,19 @@ TODO:
 */
 
 void loop() {
-  if (myCodeCell.Run(10)) {
-    myCodeCell.PrintSensors();  // Print all enabled sensor values
+  if (myCodeCell.Run(30)) {
+    //myCodeCell.PrintSensors();  // Print all enabled sensor values
+    myCodeCell.Motion_LinearAccRead(x, y, z1); // Linear acceleration
+    if (z1 < threshold_stationary && z2 > threshold_movement){
+      Serial.println("DOWN");
+    }
+    if (z1 > threshold_stationary && z2 < (threshold_movement * -1)){
+      Serial.println("UP");
+    }
+    z2 = z1;
+
     if (isConnected) {
-      if (myCodeCell.Motion_TapDetectorRead()) {
-        Serial.println(">> Tap Detected!");
-        MIDI.sendNoteOn(60, 127, 1);
-      }
+
     }
   }
 }
