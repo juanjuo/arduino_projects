@@ -48,6 +48,8 @@ Magnetometer : strength of magnetic field on 3 axis
 CodeCell myCodeCell;
 BLEMIDI_CREATE_INSTANCE("CODECELL_MIDI", MIDI)
 
+//BLEMIDI_CREATE_DEFAULT_INSTANCE()
+
 
 bool isConnected = false;
 float x = 0.0;
@@ -90,19 +92,29 @@ TODO:
 */
 
 void loop() {
-  if (myCodeCell.Run(30)) {
+  if (myCodeCell.Run(10)) {
     //myCodeCell.PrintSensors();  // Print all enabled sensor values
-    myCodeCell.Motion_LinearAccRead(x, y, z1); // Linear acceleration
-    if (z1 < threshold_stationary && z2 > threshold_movement){
-      Serial.println("DOWN");
-    }
-    if (z1 > threshold_stationary && z2 < (threshold_movement * -1)){
-      Serial.println("UP");
-    }
-    z2 = z1;
+    myCodeCell.Motion_LinearAccRead(x, y, z1);  // Linear acceleration
 
     if (isConnected) {
-
+      if (z1 < (-threshold_stationary) && z2 > threshold_movement) {
+        MIDI.sendNoteOn(60, 127, 1);
+        Serial.print("DOWN");
+        Serial.print(" z1 = ");
+        Serial.print(z1);
+        Serial.print(" z2 = ");
+        Serial.println(z2);
+      }
+      if (z1 > threshold_stationary && z2 < (-threshold_movement)) {
+        MIDI.sendNoteOn(62, 127, 1);
+        Serial.print("UP");
+        Serial.print(" z1 = ");
+        Serial.print(z1);
+        Serial.print(" z2 = ");
+        Serial.println(z2);
+      }
     }
+
+    z2 = z1;  //UPDATE LAST STATE
   }
 }
