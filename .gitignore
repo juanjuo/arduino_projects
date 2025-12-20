@@ -1,0 +1,41 @@
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
+
+# Arduino build files
+*.elf
+*.hex
+*.bin
+*.map
+*.eep
+*.lst
+
+# Arduino CLI / build directories
+build/
+out/
+dist/
+
+# Temporary files
+*.log
+*.tmp
+*.swp
+
+# VS Code (if you use it with Arduino)
+.vscode/
+*.code-workspace
+
+# Platform-specific / toolchain
+*.o
+*.a
+*.d
+
+# Python virtual environments (sometimes used with Arduino tools)
+venv/
+.venv/
+
+# Misc
+Thumbs.db
