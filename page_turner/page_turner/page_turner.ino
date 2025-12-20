@@ -3,7 +3,9 @@
 //#include "esp_wifi.h"
 //#include "driver/adc.h"
 
-BleKeyboard bleKeyboard;
+BleKeyboard bleKeyboard("Liz's Pedal", "Juan D. Mora", 100);
+
+//BleKeyboard bleKeyboard;
 
 const int rightButton = 1;
 bool rightHasBeenPressed = false;
@@ -22,6 +24,10 @@ void setup()
   //esp_wifi_stop();      // If Wi-Fi accidentally started
   //esp_wifi_deinit();
   //adc_power_off();      // If no analog sensors
+
+  bleKeyboard.onConnect([](){ Serial.println("onConnect"); });
+  bleKeyboard.onDisconnect([](){ Serial.println("onDisconnect"); }); //make it start advertising again
+
   bleKeyboard.begin();
 
   pinMode(rightButton, INPUT_PULLUP);  // make sure you have a pull-up/down resistor externally
