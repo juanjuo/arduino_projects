@@ -5,11 +5,11 @@ BLEMIDI_CREATE_INSTANCE("BLE_MIDI_KEYBOARD", MIDI)
 
 const int NUM_KEYS = 12;
 
-int keyPins[NUM_KEYS] = { 0, 1, 2, 3, 4, 5, 6, 7, 10, 21};
+int keyPins[NUM_KEYS] = {18, 5, 19, 17, 21, 22, 16, 23, 4, 33, 27, 32};
 
-int keyLastState[NUM_KEYS] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+int keyLastState[NUM_KEYS] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-int notes[NUM_KEYS] = { 60, 61, 62, 63, 64, 65, 66, 67, 68, 70};
+int notes[NUM_KEYS] = { 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71};
 
 int keyState = LOW;
 
