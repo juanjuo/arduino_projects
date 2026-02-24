@@ -54,40 +54,85 @@ Magnetometer : strength of magnetic field on 3 axis
 */
 
 #include <CodeCell.h>
-#include <BLEMIDI_Transport.h>
-#include <hardware/BLEMIDI_ESP32.h>
+//#include <BLEMIDI_Transport.h>
+//#include <hardware/BLEMIDI_ESP32.h>
+
+#include <WiFi.h>
+#include <WiFiUdp.h>
+#include <OSCMessage.h>
 
 CodeCell myCodeCell;
-BLEMIDI_CREATE_INSTANCE("CODECELL_MIDI", MIDI)
 
+//FOR BLUETOOTH MIDI ....
+//BLEMIDI_CREATE_INSTANCE("CODECELL_MIDI", MIDI)
 //BLEMIDI_CREATE_DEFAULT_INSTANCE()
 
+// FOR OSC
+char ssid[] = "Joan and Jeff";           // your network SSID (name)
+char pass[] = "easycanoe613";            // your network password
+WiFiUDP Udp;                             // A UDP instance to let us send and receive packets over UDP
+const IPAddress outIp(192, 168, 5, 26);  // remote IP of your computer
+const unsigned int outPort = 57120;      // remote port to receive OSC
+const unsigned int localPort = 57120;    // local port to listen for OSC packets (actually not used for sending)
 
-bool isConnected = false;
+//
 float x = 0.0;
 float y = 0.0;
-float z1 = 0.0;
-float z2 = 0.0;
-float threshold_movement = 20.0;
-float threshold_stationary = 10.0;
+float current_z = 0.0;
+float negative_threshold = -2.0;
+float positive_threshold = 2.0;
+
+float filtered_z = 0.0;
+float velocity = 0.0;
+float alpha = 0.5;  //for low-pass filter
+
+float velocity_decay = 0.995;  //drift compensation
+
+int sampling_rate = 100; // for both CodeCell and Velocity
+
+enum State {
+  IDLE,
+  DOWN
+};
+
+State state = IDLE;
 
 void setup() {
-
   Serial.begin(115200);
+  Serial.println();
+  Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
+  WiFi.begin(ssid, pass);
 
-  myCodeCell.Init(MOTION_ACCELEROMETER);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("");
 
-  BLEMIDI.setHandleConnected([]() {
-    isConnected = true;
-    Serial.println("Connected");
-  });
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
 
-  BLEMIDI.setHandleDisconnected([]() {
-    isConnected = false;
-    Serial.println("Disconnected");
-  });
+  Serial.println("Starting UDP");
+  Udp.begin(localPort);
+  Serial.print("Local port: ");
+  Serial.println(localPort);
 
-  MIDI.begin();
+  myCodeCell.Init(MOTION_LINEAR_ACC);
+
+  // BLEMIDI.setHandleConnected([]() {
+  //   isConnected = true;
+  //   Serial.println("Connected");
+  // });
+
+  // BLEMIDI.setHandleDisconnected([]() {
+  //   isConnected = false;
+  //   Serial.println("Disconnected");
+  // });
+
+  //MIDI.begin();
 }
 
 /*
@@ -104,29 +149,103 @@ TODO:
 */
 
 void loop() {
-  if (myCodeCell.Run(10)) {
+  if (myCodeCell.Run(sampling_rate)) {
     //myCodeCell.PrintSensors();  // Print all enabled sensor values
-    myCodeCell.Motion_LinearAccRead(x, y, z1);  // Linear acceleration
+    myCodeCell.Motion_LinearAccRead(x, y, current_z);  // Linear acceleration
 
-    if (isConnected) {
-      if (z1 < (-threshold_stationary) && z2 > threshold_movement) {
-        MIDI.sendNoteOn(60, 127, 1);
-        Serial.print("DOWN");
-        Serial.print(" z1 = ");
-        Serial.print(z1);
-        Serial.print(" z2 = ");
-        Serial.println(z2);
-      }
-      if (z1 > threshold_stationary && z2 < (-threshold_movement)) {
-        MIDI.sendNoteOn(62, 127, 1);
-        Serial.print("UP");
-        Serial.print(" z1 = ");
-        Serial.print(z1);
-        Serial.print(" z2 = ");
-        Serial.println(z2);
-      }
+    // if(current_z > last_z || current_z < -last_z){
+    //   if (i == max_index){
+    //     if (current_z > 0){
+    //       Serial.println("DOWN");
+    //     }
+    //     else {
+    //       Serial.println("UP");
+    //     }
+    //     i = 0;
+    //     last_z = threshold_stationary;
+    //   }
+    //   else{
+    //     last_z = current_z;
+    //     i++;
+    //   }
+    // }
+
+    filtered_z = alpha * current_z + (1 - alpha) * filtered_z;
+
+    velocity += filtered_z * 0.02;
+
+    velocity *= velocity_decay;  // small decay because of drift
+
+    // OSCMessage msg("/test");
+    //   msg.add(current_z);
+    //   Udp.beginPacket(outIp, outPort);
+    //   msg.send(Udp);
+    //   Udp.endPacket();
+    //   msg.empty();
+
+    Serial.println(velocity);
+
+    switch (state) {
+
+      case IDLE:
+        if (velocity < negative_threshold) {
+          state = DOWN;
+        }
+        break;
+
+      case DOWN:
+        if (velocity > positive_threshold) {
+          Serial.println("DOWN");
+          OSCMessage msg("/test");
+          msg.add("DOWN");
+          Udp.beginPacket(outIp, outPort);
+          msg.send(Udp);
+          Udp.endPacket();
+          msg.empty();
+          state = IDLE;
+          velocity = 0;  // Reset after trigger
+        }
+        break;
     }
 
-    z2 = z1;  //UPDATE LAST STATE
+    // if (current_z < (-threshold_stationary) && last_z > threshold_stationary) {
+    //   //MIDI.sendNoteOn(60, 127, 1);
+    //   Serial.print("DOWN");
+    //   OSCMessage msg("/test");
+    //   msg.add("DOWN");
+    //   Udp.beginPacket(outIp, outPort);
+    //   msg.send(Udp);
+    //   Udp.endPacket();
+    //   msg.empty();
+    //   Serial.print(" z1 = ");
+    //   Serial.print(current_z);
+    //   Serial.print(" z2 = ");
+    //   Serial.println(last_z);
+    // }
+    // if (current_z > threshold_stationary && last_z < (-threshold_stationary)) {
+    //   //MIDI.sendNoteOn(62, 127, 1);
+    //   Serial.print("UP");
+    //   OSCMessage msg("/test");
+    //   msg.add("UP");
+    //   Udp.beginPacket(outIp, outPort);
+    //   msg.send(Udp);
+    //   Udp.endPacket();
+    //   msg.empty();
+    //   Serial.print(" z1 = ");
+    //   Serial.print(current_z);
+    //   Serial.print(" z2 = ");
+    //   Serial.println(last_z);
+    // }
+
+    //last_z = current_z;  //UPDATE LAST STATE
   }
 }
+
+// void sendOSCMessage(char[] type, char[] message) {
+//   OSCMessage msg(type);
+//   msg.add(message);
+//   Udp.beginPacket(outIp, outPort);
+//   msg.send(Udp);
+//   Udp.endPacket();
+//   msg.empty();
+// }
