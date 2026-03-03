@@ -23,6 +23,7 @@ dist/
 *.log
 *.tmp
 *.swp
+*.txt
 
 # VS Code (if you use it with Arduino)
 .vscode/
