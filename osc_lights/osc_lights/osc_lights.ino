@@ -3,6 +3,8 @@
 #include <OSCMessage.h>
 
 const int ledPin = 13;
+
+const int onBoardLED = 2;
 // const int pwmFreq = 1000;     // 1 kHz
 // const int pwmResolution = 8;  // 8-bit PWM (0–255)
 
@@ -15,6 +17,8 @@ const int localPort = 57120;
 void setup() {
   Serial.begin(115200);
 
+  pinMode (onBoardLED, OUTPUT);
+
   //Connect to WiFi
   WiFi.begin(ssid, password);
   Serial.print("Connecting to WiFi");
@@ -24,6 +28,7 @@ void setup() {
   }
 
   Serial.println("\nConnected!");
+  digitalWrite(onBoardLED, HIGH);
   Serial.print("ESP32 IP: ");
   Serial.println(WiFi.localIP());
 
@@ -40,6 +45,11 @@ void setup() {
 }
 
 void loop() {
+
+  if (WiFi.status() != WL_CONNECTED){
+    digitalWrite(onBoardLED, LOW);
+  }
+
   OSCMessage msg;
   int packetSize = udp.parsePacket();
 
