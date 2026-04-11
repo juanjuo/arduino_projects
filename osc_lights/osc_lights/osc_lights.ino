@@ -2,7 +2,7 @@
 #include <WiFiUdp.h>
 #include <OSCMessage.h>
 
-const int ledPin = 13;
+const int ledPin = 15;
 
 const int onBoardLED = 2;
 // const int pwmFreq = 1000;     // 1 kHz
