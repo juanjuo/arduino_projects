@@ -68,12 +68,12 @@ CodeCell myCodeCell;
 //BLEMIDI_CREATE_DEFAULT_INSTANCE()
 
 // FOR OSC
-// char ssid[] = "Joan and Jeff";           // your network SSID (name)
-// char pass[] = "easycanoe613";            // your network password
-char ssid[] = "juan_phone";           // your network SSID (name)
-char pass[] = "123456789";            // your network password
+char ssid[] = "Joan and Jeff (appt)";  // your network SSID (name)
+char pass[] = "easycanoe613";          // your network password
+// char ssid[] = "juan_phone";           // your network SSID (name)
+// char pass[] = "123456789";            // your network password
 WiFiUDP Udp;                             // A UDP instance to let us send and receive packets over UDP
-const IPAddress outIp(192, 168, 5, 26);  // remote IP of your computer
+const IPAddress outIp(192, 168, 4, 32);  // remote IP of your computer
 const unsigned int outPort = 57120;      // remote port to receive OSC
 const unsigned int localPort = 57120;    // local port to listen for OSC packets (actually not used for sending)
 
@@ -90,7 +90,7 @@ float alpha = 0.5;  //for low-pass filter
 
 float velocity_decay = 0.995;  //drift compensation
 
-int sampling_rate = 100; // for both CodeCell and Velocity
+int sampling_rate = 10;  // for both CodeCell and Velocity
 
 enum State {
   IDLE,
@@ -104,6 +104,8 @@ void setup() {
   Serial.println();
   Serial.println();
   Serial.print("Connecting to ");
+  myCodeCell.LED_SetBrightness(1);
+  myCodeCell.LED(255, 0, 0);
   Serial.println(ssid);
   WiFi.begin(ssid, pass);
 
@@ -116,13 +118,14 @@ void setup() {
   Serial.println("WiFi connected");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
-
   Serial.println("Starting UDP");
   Udp.begin(localPort);
   Serial.print("Local port: ");
   Serial.println(localPort);
 
   myCodeCell.Init(MOTION_LINEAR_ACC);
+  myCodeCell.LED_SetBrightness(1);
+  myCodeCell.LED(0, 0, 255);
 
   // BLEMIDI.setHandleConnected([]() {
   //   isConnected = true;
@@ -178,14 +181,14 @@ void loop() {
 
     velocity *= velocity_decay;  // small decay because of drift
 
-    // OSCMessage msg("/test");
-    //   msg.add(current_z);
-    //   Udp.beginPacket(outIp, outPort);
-    //   msg.send(Udp);
-    //   Udp.endPacket();
-    //   msg.empty();
+    OSCMessage msg("/test");
+    msg.add(current_z);
+    Udp.beginPacket(outIp, outPort);
+    msg.send(Udp);
+    Udp.endPacket();
+    msg.empty();
 
-    Serial.println(velocity);
+    //Serial.println(velocity);
 
     switch (state) {
 
