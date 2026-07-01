@@ -8,8 +8,8 @@ const int onBoardLED = 2;
 // const int pwmFreq = 1000;     // 1 kHz
 // const int pwmResolution = 8;  // 8-bit PWM (0–255)
 
-char ssid[] = "Joan and Jeff (appt)";
-char password[] = "easycanoe613";
+char ssid[] = "light_control";
+char password[] = "12345678";
 
 WiFiUDP udp;
 const int localPort = 57120;
