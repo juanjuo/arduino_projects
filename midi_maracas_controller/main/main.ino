@@ -41,7 +41,6 @@ myCodeCell.PrintSensors(); //to print all enabled sensors to serial monitor
 //There's somthing wrong with the esp32 library that I can't remember... if things don't work go back to version 2.0.17
 // Sometimes the native Arduino BLE-MIDI library won't work. In this case, just use the one I have forked in my repository.
 
-
 /*
 Some other notes on IMUs
 
@@ -81,11 +80,13 @@ const unsigned int localPort = 57120;    // local port to listen for OSC packets
 float x = 0.0;
 float y = 0.0;
 float current_z = 0.0;
-float negative_threshold = -2.0;
-float positive_threshold = 2.0;
+float negative_threshold = -300.0;
+float positive_threshold = 300.0;
 
 float filtered_z = 0.0;
 float velocity = 0.0;
+float previous_z = 0.0;
+float rate_of_change = 0.0;
 float alpha = 0.5;  //for low-pass filter
 
 float velocity_decay = 0.995;  //drift compensation
@@ -149,8 +150,6 @@ TODO:
 
 - Movement Control
 
-  - 
-
 */
 
 void loop() {
@@ -175,74 +174,61 @@ void loop() {
     //   }
     // }
 
-    filtered_z = alpha * current_z + (1 - alpha) * filtered_z;
+    filtered_z = alpha * current_z + (1 - alpha) * filtered_z; //low-pass filter (EMA)
 
-    velocity += filtered_z * 0.02;
+    //velocity += filtered_z * 0.02;
 
-    velocity *= velocity_decay;  // small decay because of drift
+    rate_of_change = (filtered_z - previous_z) / 0.01;
 
-    OSCMessage msg("/test");
-    msg.add(current_z);
-    Udp.beginPacket(outIp, outPort);
-    msg.send(Udp);
-    Udp.endPacket();
-    msg.empty();
+    previous_z = filtered_z;
+
+    //velocity *= velocity_decay;  // small decay because of drift
+
+    // OSCMessage msg("/test");
+    // msg.add(current_z);
+    // msg.add(filtered_z);
+    // msg.add(rate_of_change);
+    // Udp.beginPacket(outIp, outPort);
+    // msg.send(Udp);
+    // Udp.endPacket();
+    // msg.empty();
+
+    //Positive going down / negative going up?????
 
     //Serial.println(velocity);
 
-    switch (state) {
+    // switch (state) {
 
-      case IDLE:
-        if (velocity < negative_threshold) {
-          state = DOWN;
-        }
-        break;
+    //   case IDLE:
+    //     if (rate_of_change < negative_threshold) {
+    //       state = DOWN;
+    //     }
+    //     break;
 
-      case DOWN:
-        if (velocity > positive_threshold) {
-          Serial.println("DOWN");
-          OSCMessage msg("/test");
-          msg.add("DOWN");
-          Udp.beginPacket(outIp, outPort);
-          msg.send(Udp);
-          Udp.endPacket();
-          msg.empty();
-          state = IDLE;
-          velocity = 0;  // Reset after trigger
-        }
-        break;
+    //   case DOWN:
+    //     if (rate_of_change > positive_threshold) {
+    //       //Serial.println("DOWN");
+    //       OSCMessage msg("/test");
+    //       msg.add("DOWN!!!!!!");
+    //       Udp.beginPacket(outIp, outPort);
+    //       msg.send(Udp);
+    //       Udp.endPacket();
+    //       msg.empty();
+    //       state = IDLE;
+    //       //velocity = 0;  // Reset after trigger
+    //     }
+    //     break;
+    // }
+
+    if (rate_of_change < -450){
+      OSCMessage msg("/test");
+      msg.add("DOWN!!!!!!");
+      Udp.beginPacket(outIp, outPort);
+      msg.send(Udp);
+      Udp.endPacket();
+      msg.empty();
+      state = IDLE;
     }
-
-    // if (current_z < (-threshold_stationary) && last_z > threshold_stationary) {
-    //   //MIDI.sendNoteOn(60, 127, 1);
-    //   Serial.print("DOWN");
-    //   OSCMessage msg("/test");
-    //   msg.add("DOWN");
-    //   Udp.beginPacket(outIp, outPort);
-    //   msg.send(Udp);
-    //   Udp.endPacket();
-    //   msg.empty();
-    //   Serial.print(" z1 = ");
-    //   Serial.print(current_z);
-    //   Serial.print(" z2 = ");
-    //   Serial.println(last_z);
-    // }
-    // if (current_z > threshold_stationary && last_z < (-threshold_stationary)) {
-    //   //MIDI.sendNoteOn(62, 127, 1);
-    //   Serial.print("UP");
-    //   OSCMessage msg("/test");
-    //   msg.add("UP");
-    //   Udp.beginPacket(outIp, outPort);
-    //   msg.send(Udp);
-    //   Udp.endPacket();
-    //   msg.empty();
-    //   Serial.print(" z1 = ");
-    //   Serial.print(current_z);
-    //   Serial.print(" z2 = ");
-    //   Serial.println(last_z);
-    // }
-
-    //last_z = current_z;  //UPDATE LAST STATE
   }
 }
 
