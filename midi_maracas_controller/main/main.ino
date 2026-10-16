@@ -67,16 +67,21 @@ CodeCell myCodeCell;
 //BLEMIDI_CREATE_DEFAULT_INSTANCE()
 
 // FOR OSC
-char ssid[] = "Joan and Jeff (appt)";  // your network SSID (name)
-char pass[] = "easycanoe613";          // your network password
-// char ssid[] = "juan_phone";           // your network SSID (name)
-// char pass[] = "123456789";            // your network password
+
+//char ssid[] = "Joan and Jeff (appt)";  // your network SSID (name)
+//char pass[] = "easycanoe613";          // your network password
+
+// char ssid[] = "juan_phone";           
+// char pass[] = "123456789";            
+
+char ssid[] = "light_control";           
+char pass[] = "12345678";            
+
 WiFiUDP Udp;                             // A UDP instance to let us send and receive packets over UDP
-const IPAddress outIp(192, 168, 4, 32);  // remote IP of your computer
+const IPAddress outIp(192, 168, 1, 129);  // remote IP of your computer
 const unsigned int outPort = 57120;      // remote port to receive OSC
 const unsigned int localPort = 57120;    // local port to listen for OSC packets (actually not used for sending)
 
-//
 float x = 0.0;
 float y = 0.0;
 float current_z = 0.0;
